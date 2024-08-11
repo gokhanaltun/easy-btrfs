@@ -2,7 +2,7 @@
 A user-friendly Btrfs CLI tool for managing snapshots and subvolume configurations.
 
 ## Table of Contents
-- [Installation AMD64 (x86_64)](#installation-amd64-x8664)
+- [Installation AMD64 (x86_64)](#installation-amd64)
 - [Manual Installation](#manual-installation)
 - [Commands and Usage](#commands-and-usage)
   - [Create Config](#create-config)
@@ -14,7 +14,7 @@ A user-friendly Btrfs CLI tool for managing snapshots and subvolume configuratio
   - [RollBack](#rollback)
 - [Old Backups](#old-backups)
 
-## Installation AMD64 (x86_64)
+## Installation AMD64
 1. Clone the repository to your computer using `git clone`.
 2. Navigate to `download_location/easy-btrfs/build` and open a terminal there.
 3. First, run the following command to grant execute permission to the `install.sh` file:
@@ -37,7 +37,7 @@ When the `install.sh` script is run, it will:
 - Move the `ebtrfs` program file from `easy-btrfs/build` to `/usr/local/bin` and set execution permissions. This allows you to use the program from the terminal.
 
 ## Manual Installation
-For manual installation, you must have <a href="">Go (Golang)</a> installed on your computer. 
+For manual installation, you must have <a href="https://go.dev/doc/install">Go (Golang)</a> installed on your computer. 
 
 1. Clone the repository to your computer using the `git clone` command.
 2. Navigate to `download_location/easy-btrfs` and open a terminal there.
@@ -46,7 +46,7 @@ For manual installation, you must have <a href="">Go (Golang)</a> installed on y
    go build -o ./build/ebtrfs
    ```
    This command will generate an executable file tailored to your computer.
-4. Now, follow steps 3 and 4 in the [Installation AMD64 (x86_64)](#installation-amd64-x8664) section to complete the setup.
+4. Now, follow steps 3 and 4 in the [Installation AMD64 (x86_64)](#installation-amd64) section to complete the setup.
 
 ## Commands and Usage
 This section will explain the commands and how to use them.
