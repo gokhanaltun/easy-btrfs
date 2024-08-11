@@ -153,6 +153,6 @@ For example, in the following output, the snapshot with ID 4 is an old backup, a
 | ID | Name | Path                                        | Pre   | PreFrom |
 +----+------+---------------------------------------------+-------+---------+
 | 3  | root | /mnt/@ebtrfs/@snapshots/2024-08-11-19:14:25 | false | -       |
-| 4  | root | /mnt/@old/2024-08-11-19:14:45               | true  | 3       |
+| 4  | root | /mnt/@ebtrfs/@old/2024-08-11-19:14:45       | true  | 3       |
 +----+------+---------------------------------------------+-------+---------+
 ```
