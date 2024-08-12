@@ -2,6 +2,7 @@
 A user-friendly Btrfs CLI tool for managing snapshots and subvolume configurations.
 
 ## Table of Contents
+- [Important Note](#important-note)
 - [Installation AMD64 (x86_64)](#installation-amd64)
 - [Manual Installation](#manual-installation)
 - [Commands and Usage](#commands-and-usage)
@@ -13,6 +14,19 @@ A user-friendly Btrfs CLI tool for managing snapshots and subvolume configuratio
   - [Delete Snapshots](#delete-snapshots)
   - [RollBack](#rollback)
 - [Old Backups](#old-backups)
+
+## Important Note
+
+For this program to function correctly, the default setting of the BTRFS file system must be `ID 5 (FS_TREE)`. Please follow the steps below to verify or configure this setting:
+
+To check the default setting, use the following command:
+```bash
+sudo btrfs subvolume get-default /
+```
+If the output of this command is not `ID 5 (FS_TREE)`, use the following command to set it and then restart your system:
+```bash
+sudo btrfs subvolume set-default 5 /
+```
 
 ## Installation AMD64
 1. Clone the repository to your computer using `git clone`.
