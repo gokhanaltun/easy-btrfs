@@ -330,7 +330,7 @@ func RollBack(c *cli.Context) error {
 	}
 
 	config := models.SubvolumeConfig{}
-	configResult := db.Where("id = ?", snapshotId).First(&config)
+	configResult := db.Where("name = ?", snap.Name).First(&config)
 	if configResult.RowsAffected == 0 {
 		message := fmt.Sprintf("configuration not found for snapshot: %s \n", snap.Name)
 		return errors.New(message)
