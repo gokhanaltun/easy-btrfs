@@ -1,13 +1,14 @@
 package actions
 
 import (
-	"easy-btrfs/database"
 	"easy-btrfs/models"
+	"easy-btrfs/repository"
 	"easy-btrfs/utils"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/markkurossi/tabulate"
@@ -41,22 +42,23 @@ func CreateConfig(c *cli.Context) error {
 	showCmdOutputLines := strings.Split(string(showCmdOutput), "\n")
 	subvolPath := strings.TrimSpace(showCmdOutputLines[0])
 
-	db := database.GetGormSqliteDb()
+	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
 
-	var count int64
-	if err := db.Model(&models.SubvolumeConfig{}).Where("name = ?", name).Count(&count).Error; err != nil {
-		return err
+	countByName, txByName := subvolumeConfigRepo.CountByField("name", name, &models.SubvolumeConfig{})
+	if txByName.Error != nil {
+		return txByName.Error
 	}
 
-	if count > 0 {
+	if countByName != 0 {
 		return fmt.Errorf("a configuration with the name '%s' already exists", name)
 	}
 
-	if err := db.Model(&models.SubvolumeConfig{}).Where("subvolume_path = ?", subvolPath).Count(&count).Error; err != nil {
-		return err
+	countBySubvolPath, txBySubvolPath := subvolumeConfigRepo.CountByField("subvolume_path", subvolPath, &models.SubvolumeConfig{})
+	if txBySubvolPath.Error != nil {
+		return txBySubvolPath.Error
 	}
 
-	if count > 0 {
+	if countBySubvolPath != 0 {
 		return fmt.Errorf("a configuration with the path '%s' already exists", path)
 	}
 
@@ -65,8 +67,8 @@ func CreateConfig(c *cli.Context) error {
 		SubvolumePath: subvolPath,
 	}
 
-	tx := db.Save(subvolumeConfig)
-	if tx == nil {
+	tx := subvolumeConfigRepo.Save(&subvolumeConfig)
+	if tx.Error == nil {
 		return errors.New("database error: configuration could not be saved")
 	}
 
@@ -79,9 +81,9 @@ func CreateConfig(c *cli.Context) error {
 // Returns an error if the database operation fails.
 func ListConfigs(c *cli.Context) error {
 
-	db := database.GetGormSqliteDb()
-	configs := []models.SubvolumeConfig{}
-	result := db.Find(&configs)
+	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+
+	configs, result := subvolumeConfigRepo.FindAll()
 	if result.Error != nil {
 		return errors.New("failed to retrieve configurations from the database: " + result.Error.Error())
 	}
@@ -116,8 +118,8 @@ func DeleteConfig(c *cli.Context) error {
 		return errors.New("the 'config name' argument is required and cannot be empty")
 	}
 
-	db := database.GetGormSqliteDb()
-	result := db.Model(&models.SubvolumeConfig{}).Where("name = ?", name).Delete(&models.SubvolumeConfig{})
+	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+	result := subvolumeConfigRepo.DeleteByField("name", name, &models.SubvolumeConfig{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -138,9 +140,9 @@ func Snapshot(c *cli.Context) error {
 		return errors.New("the 'config name' argument is required and cannot be empty")
 	}
 
-	config := models.SubvolumeConfig{}
-	db := database.GetGormSqliteDb()
-	result := db.Where("name = ?", configName).First(&config)
+	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+	config, result := subvolumeConfigRepo.FindFirstByName(configName)
+
 	if result.Error != nil {
 		if result.RowsAffected == 0 {
 			return fmt.Errorf("config not found %s", configName)
@@ -157,7 +159,8 @@ func Snapshot(c *cli.Context) error {
 		Pre:           false,
 	}
 
-	snapSaveResult := db.Save(&snapshot)
+	snapshotRepo := repository.NewSnapshotRepository()
+	snapSaveResult := snapshotRepo.Save(&snapshot)
 	if snapSaveResult.Error != nil {
 		return errors.New("failed to save snapshot to the database: " + snapSaveResult.Error.Error())
 	}
@@ -177,12 +180,11 @@ func Snapshot(c *cli.Context) error {
 // lists snapshots associated with that configuration.
 // Returns an error if snapshot records cannot be retrieved or if no snapshots are found.
 func ListSnapshots(c *cli.Context) error {
+	snapshotRepo := repository.NewSnapshotRepository()
 
 	configName := c.Args().Get(0)
 	if configName == "" {
-		snaps := []models.Snapshot{}
-		db := database.GetGormSqliteDb()
-		result := db.Find(&snaps)
+		snaps, result := snapshotRepo.FindAll()
 		if result.RowsAffected == 0 {
 			return errors.New("no snapshots found")
 		}
@@ -216,8 +218,8 @@ func ListSnapshots(c *cli.Context) error {
 		tb.Print(os.Stdout)
 
 	} else {
-		db := database.GetGormSqliteDb()
-		result := db.Find(&models.SubvolumeConfig{})
+		subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+		_, result := subvolumeConfigRepo.FindFirstByName(configName)
 		if result.RowsAffected == 0 {
 			errMessage := fmt.Sprintf("%s configuration not found", configName)
 			return errors.New(errMessage)
@@ -226,8 +228,7 @@ func ListSnapshots(c *cli.Context) error {
 			return result.Error
 		}
 
-		snaps := []models.Snapshot{}
-		snapsResult := db.Where("name = ?", configName).Find(&snaps)
+		snaps, snapsResult := snapshotRepo.FindAllByName(configName)
 		if snapsResult.RowsAffected == 0 {
 			errMessage := fmt.Sprintf("no snapshots found for configuration: %s \n", configName)
 			return errors.New(errMessage)
@@ -263,11 +264,15 @@ func DeleteSnapshots(c *cli.Context) error {
 		return errors.New("at least one snapshot ID is expected, provided 0")
 	}
 
-	db := database.GetGormSqliteDb()
+	snapshotRepo := repository.NewSnapshotRepository()
 
 	for _, id := range args {
-		snap := models.Snapshot{}
-		result := db.Where("id = ?", id).First(&snap)
+		intResult, strconvErr := strconv.Atoi(id)
+		if strconvErr != nil {
+			errMessage := fmt.Sprintf("input contains string value %s; please enter only positive integers", id)
+			return errors.New(errMessage)
+		}
+		snap, result := snapshotRepo.FindFirstById(intResult)
 
 		if result.RowsAffected == 0 {
 			message := fmt.Sprintf("snapshot not found: %s \n", id)
@@ -281,9 +286,12 @@ func DeleteSnapshots(c *cli.Context) error {
 		_, err := os.Stat(snap.Path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				message := fmt.Sprintf("snapshot not found at path: %s \n", snap.Path)
-				return errors.New(message)
+				fmt.Printf("snapshot not found at path: %s \n", snap.Path)
 
+				result := snapshotRepo.Delete(&snap)
+				if result.Error != nil {
+					return result.Error
+				}
 			} else {
 				return err
 			}
@@ -294,7 +302,7 @@ func DeleteSnapshots(c *cli.Context) error {
 				return errors.New("failed to delete snapshot: " + string(cmdOutput))
 			}
 
-			result := db.Delete(&snap)
+			result := snapshotRepo.Delete(&snap)
 			if result.Error != nil {
 				return result.Error
 			}
@@ -316,10 +324,15 @@ func RollBack(c *cli.Context) error {
 		return errors.New("the 'snapshot id' argument is required and cannot be empty")
 	}
 
-	db := database.GetGormSqliteDb()
+	intResult, strconvErr := strconv.Atoi(snapshotId)
+	if strconvErr != nil {
+		errMessage := fmt.Sprintf("input contains string value %s; please enter only positive integers", snapshotId)
+		return errors.New(errMessage)
+	}
 
-	snap := models.Snapshot{}
-	snapResult := db.Where("id = ?", snapshotId).First(&snap)
+	snapshotRepo := repository.NewSnapshotRepository()
+
+	snap, snapResult := snapshotRepo.FindFirstById(intResult)
 	if snapResult.RowsAffected == 0 {
 		message := fmt.Sprintf("snapshot not found: %s \n", snapshotId)
 		return errors.New(message)
@@ -329,8 +342,8 @@ func RollBack(c *cli.Context) error {
 		return snapResult.Error
 	}
 
-	config := models.SubvolumeConfig{}
-	configResult := db.Where("name = ?", snap.Name).First(&config)
+	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+	config, configResult := subvolumeConfigRepo.FindFirstByName(snap.Name)
 	if configResult.RowsAffected == 0 {
 		message := fmt.Sprintf("configuration not found for snapshot: %s \n", snap.Name)
 		return errors.New(message)
@@ -356,7 +369,7 @@ func RollBack(c *cli.Context) error {
 		return errors.New("failed to move current subvolume: " + string(moveCurrentSubvolCmdOutput))
 	}
 
-	preSnapSaveResult := db.Save(&preSnap)
+	preSnapSaveResult := snapshotRepo.Save(&preSnap)
 	if preSnapSaveResult.Error != nil {
 		return errors.New("failed to save backup snapshot to the database: " + preSnap.Path + " : " + preSnapSaveResult.Error.Error())
 	}

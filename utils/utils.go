@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"easy-btrfs/database"
 	"easy-btrfs/models"
+	"easy-btrfs/repository"
 	"errors"
 	"fmt"
 	"os"
@@ -27,9 +27,10 @@ func Install() error {
 		return errors.New("disk err: " + diskErr.Error())
 	}
 
+	generalConfigRepo := repository.NewGeneralConfigRepository()
+
 	generalConfig := models.GeneralConfig{Disk: disk}
-	db := database.GetGormSqliteDb()
-	result := db.Save(&generalConfig)
+	result := generalConfigRepo.Save(&generalConfig)
 	if result.Error != nil {
 		return errors.New(result.Error.Error())
 	}
