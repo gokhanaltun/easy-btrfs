@@ -1,5 +1,5 @@
 # easy-btrfs
-A user-friendly Btrfs CLI tool for managing snapshots and subvolume configurations.
+A user-friendly Btrfs CLI tool for managing snapshots.
 
 ## Table of Contents
 - [Important Note](#important-note)
