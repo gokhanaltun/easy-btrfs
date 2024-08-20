@@ -68,7 +68,7 @@ func CreateConfig(c *cli.Context) error {
 	}
 
 	tx := subvolumeConfigRepo.Save(&subvolumeConfig)
-	if tx.Error == nil {
+	if tx.Error != nil {
 		return errors.New("database error: configuration could not be saved")
 	}
 
