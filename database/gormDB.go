@@ -2,7 +2,9 @@ package database
 
 import (
 	"easy-btrfs/models"
+	"fmt"
 	"path/filepath"
+	"sync"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -10,25 +12,37 @@ import (
 )
 
 var db *gorm.DB
+var once sync.Once
 
-func GetGormSqliteDb() *gorm.DB {
-	if db == nil {
+func GetGormSqliteDb() (*gorm.DB, error) {
+	var dbErr error
+	once.Do(func() {
 		dbPath := filepath.Join("/mnt/@ebtrfs/@data/", "ebtrfs.db")
 
 		gormDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
 		if err != nil {
-			panic(err)
+			dbErr = err
+			return
 		}
 
 		db = gormDB
-		migrate(db)
+		migrationErr := migrate(db)
+		if migrationErr != nil {
+			dbErr = migrationErr
+			return
+		}
+	})
+
+	if dbErr != nil {
+		return nil, dbErr
 	}
-	return db
+
+	return db, nil
 }
 
-func migrate(db *gorm.DB) {
+func migrate(db *gorm.DB) error {
 	models := []interface{}{
 		&models.GeneralConfig{},
 		&models.SubvolumeConfig{},
@@ -38,7 +52,8 @@ func migrate(db *gorm.DB) {
 	for _, model := range models {
 		err := db.AutoMigrate(model)
 		if err != nil {
-			panic("failed to migrate model: " + err.Error())
+			return fmt.Errorf("failed to migrate model: " + err.Error())
 		}
 	}
+	return nil
 }

@@ -39,7 +39,12 @@ func main() {
 			return nil
 		},
 		After: func(ctx *cli.Context) error {
-			db, err := database.GetGormSqliteDb().DB()
+			dbInstance, err := database.GetGormSqliteDb()
+			if err != nil {
+				return fmt.Errorf("failed to initialize database: %v", err)
+			}
+
+			db, err := dbInstance.DB()
 			if err != nil {
 				return err
 			}
