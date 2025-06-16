@@ -1,8 +1,9 @@
 package actions
 
 import (
+	"easy-btrfs/database"
 	"easy-btrfs/models"
-	"easy-btrfs/repository"
+	"easy-btrfs/store"
 	"easy-btrfs/utils"
 	"errors"
 	"fmt"
@@ -42,20 +43,25 @@ func CreateConfig(c *cli.Context) error {
 	showCmdOutputLines := strings.Split(string(showCmdOutput), "\n")
 	subvolPath := strings.TrimSpace(showCmdOutputLines[0])
 
-	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
 
-	countByName, txByName := subvolumeConfigRepo.CountByField("name", name, &models.SubvolumeConfig{})
-	if txByName.Error != nil {
-		return txByName.Error
+	subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
+
+	countByName, err := subvolumeConfigStore.CountByField("name", name, &models.SubvolumeConfig{})
+	if err != nil {
+		return err
 	}
 
 	if countByName != 0 {
 		return fmt.Errorf("a configuration with the name '%s' already exists", name)
 	}
 
-	countBySubvolPath, txBySubvolPath := subvolumeConfigRepo.CountByField("subvolume_path", subvolPath, &models.SubvolumeConfig{})
-	if txBySubvolPath.Error != nil {
-		return txBySubvolPath.Error
+	countBySubvolPath, err := subvolumeConfigStore.CountByField("subvolume_path", subvolPath, &models.SubvolumeConfig{})
+	if err != nil {
+		return err
 	}
 
 	if countBySubvolPath != 0 {
@@ -67,9 +73,9 @@ func CreateConfig(c *cli.Context) error {
 		SubvolumePath: subvolPath,
 	}
 
-	tx := subvolumeConfigRepo.Save(&subvolumeConfig)
-	if tx.Error != nil {
-		return errors.New("database error: configuration could not be saved")
+	saveErr := subvolumeConfigStore.Save(subvolumeConfig)
+	if saveErr != nil {
+		return fmt.Errorf("database error: configuration could not be saved: %v", saveErr)
 	}
 
 	fmt.Printf("%s config created successfuly \n", name)
@@ -80,12 +86,16 @@ func CreateConfig(c *cli.Context) error {
 // ListConfigs lists all subvolume configurations from the database.
 // Returns an error if the database operation fails.
 func ListConfigs(c *cli.Context) error {
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
 
-	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
+	subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
 
-	configs, result := subvolumeConfigRepo.FindAll()
+	configs, result := subvolumeConfigStore.FindAll()
 	if result.Error != nil {
-		return errors.New("failed to retrieve configurations from the database: " + result.Error.Error())
+		return fmt.Errorf("failed to retrieve configurations from the database: %v", result.Error)
 	}
 
 	if len(configs) == 0 {
@@ -118,8 +128,14 @@ func DeleteConfig(c *cli.Context) error {
 		return errors.New("the 'config name' argument is required and cannot be empty")
 	}
 
-	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
-	result := subvolumeConfigRepo.DeleteByField("name", name, &models.SubvolumeConfig{})
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
+
+	subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
+
+	result := subvolumeConfigStore.DeleteByField("name", name, &models.SubvolumeConfig{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -140,8 +156,13 @@ func Snapshot(c *cli.Context) error {
 		return errors.New("the 'config name' argument is required and cannot be empty")
 	}
 
-	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
-	config, result := subvolumeConfigRepo.FindFirstByName(configName)
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
+
+	subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
+	config, result := subvolumeConfigStore.FindFirstByName(configName)
 
 	if result.Error != nil {
 		if result.RowsAffected == 0 {
@@ -159,10 +180,10 @@ func Snapshot(c *cli.Context) error {
 		Pre:           false,
 	}
 
-	snapshotRepo := repository.NewSnapshotRepository()
-	snapSaveResult := snapshotRepo.Save(&snapshot)
-	if snapSaveResult.Error != nil {
-		return errors.New("failed to save snapshot to the database: " + snapSaveResult.Error.Error())
+	snapshotStore := store.NewSnapshotStore(db)
+	saveErr := snapshotStore.Save(&snapshot)
+	if saveErr != nil {
+		return fmt.Errorf("failed to save snapshot to the database: %v", saveErr)
 	}
 
 	snapCmd := exec.Command("btrfs", "subvol", "snap", "-r", utils.MountPoint+config.SubvolumePath, snapshot.Path)
@@ -180,11 +201,17 @@ func Snapshot(c *cli.Context) error {
 // lists snapshots associated with that configuration.
 // Returns an error if snapshot records cannot be retrieved or if no snapshots are found.
 func ListSnapshots(c *cli.Context) error {
-	snapshotRepo := repository.NewSnapshotRepository()
+
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
+
+	snapshotStore := store.NewSnapshotStore(db)
 
 	configName := c.Args().Get(0)
 	if configName == "" {
-		snaps, result := snapshotRepo.FindAll()
+		snaps, result := snapshotStore.FindAll()
 		if result.RowsAffected == 0 {
 			return errors.New("no snapshots found")
 		}
@@ -218,8 +245,8 @@ func ListSnapshots(c *cli.Context) error {
 		tb.Print(os.Stdout)
 
 	} else {
-		subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
-		_, result := subvolumeConfigRepo.FindFirstByName(configName)
+		subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
+		_, result := subvolumeConfigStore.FindFirstByName(configName)
 		if result.RowsAffected == 0 {
 			errMessage := fmt.Sprintf("%s configuration not found", configName)
 			return errors.New(errMessage)
@@ -228,7 +255,7 @@ func ListSnapshots(c *cli.Context) error {
 			return result.Error
 		}
 
-		snaps, snapsResult := snapshotRepo.FindAllByName(configName)
+		snaps, snapsResult := snapshotStore.FindAllByName(configName)
 		if snapsResult.RowsAffected == 0 {
 			errMessage := fmt.Sprintf("no snapshots found for configuration: %s \n", configName)
 			return errors.New(errMessage)
@@ -264,7 +291,12 @@ func DeleteSnapshots(c *cli.Context) error {
 		return errors.New("at least one snapshot ID is expected, provided 0")
 	}
 
-	snapshotRepo := repository.NewSnapshotRepository()
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
+
+	snapshotStore := store.NewSnapshotStore(db)
 
 	for _, id := range args {
 		intResult, strconvErr := strconv.Atoi(id)
@@ -272,7 +304,8 @@ func DeleteSnapshots(c *cli.Context) error {
 			errMessage := fmt.Sprintf("input contains string value %s; please enter only positive integers", id)
 			return errors.New(errMessage)
 		}
-		snap, result := snapshotRepo.FindFirstById(intResult)
+
+		snap, result := snapshotStore.FindFirstById(intResult)
 
 		if result.RowsAffected == 0 {
 			message := fmt.Sprintf("snapshot not found: %s \n", id)
@@ -288,9 +321,9 @@ func DeleteSnapshots(c *cli.Context) error {
 			if os.IsNotExist(err) {
 				fmt.Printf("snapshot not found at path: %s \n", snap.Path)
 
-				result := snapshotRepo.Delete(&snap)
-				if result.Error != nil {
-					return result.Error
+				err := snapshotStore.Delete(&snap)
+				if err != nil {
+					return err
 				}
 			} else {
 				return err
@@ -302,9 +335,9 @@ func DeleteSnapshots(c *cli.Context) error {
 				return errors.New("failed to delete snapshot: " + string(cmdOutput))
 			}
 
-			result := snapshotRepo.Delete(&snap)
-			if result.Error != nil {
-				return result.Error
+			err := snapshotStore.Delete(&snap)
+			if err != nil {
+				return err
 			}
 
 			fmt.Printf("snapshot deleted %s \n", snap.Path)
@@ -330,9 +363,14 @@ func RollBack(c *cli.Context) error {
 		return errors.New(errMessage)
 	}
 
-	snapshotRepo := repository.NewSnapshotRepository()
+	db, err := database.GetGormSqliteDb()
+	if err != nil {
+		return err
+	}
 
-	snap, snapResult := snapshotRepo.FindFirstById(intResult)
+	snapshotStore := store.NewSnapshotStore(db)
+
+	snap, snapResult := snapshotStore.FindFirstById(intResult)
 	if snapResult.RowsAffected == 0 {
 		message := fmt.Sprintf("snapshot not found: %s \n", snapshotId)
 		return errors.New(message)
@@ -342,8 +380,8 @@ func RollBack(c *cli.Context) error {
 		return snapResult.Error
 	}
 
-	subvolumeConfigRepo := repository.NewSubvolumeConfigRepository()
-	config, configResult := subvolumeConfigRepo.FindFirstByName(snap.Name)
+	subvolumeConfigStore := store.NewSubvolumeConfigStore(db)
+	config, configResult := subvolumeConfigStore.FindFirstByName(snap.Name)
 	if configResult.RowsAffected == 0 {
 		message := fmt.Sprintf("configuration not found for snapshot: %s \n", snap.Name)
 		return errors.New(message)
@@ -369,9 +407,9 @@ func RollBack(c *cli.Context) error {
 		return errors.New("failed to move current subvolume: " + string(moveCurrentSubvolCmdOutput))
 	}
 
-	preSnapSaveResult := snapshotRepo.Save(&preSnap)
-	if preSnapSaveResult.Error != nil {
-		return errors.New("failed to save backup snapshot to the database: " + preSnap.Path + " : " + preSnapSaveResult.Error.Error())
+	saveErr := snapshotStore.Save(&preSnap)
+	if saveErr != nil {
+		return fmt.Errorf("failed to save backup snapshot to the database: %s : %v", preSnap.Path, saveErr)
 	}
 
 	fmt.Println("backup snapshot created before rollback: " + preSnap.Path)

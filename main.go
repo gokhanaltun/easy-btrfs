@@ -3,8 +3,7 @@ package main
 import (
 	"easy-btrfs/commands"
 	"easy-btrfs/database"
-	"easy-btrfs/models"
-	"easy-btrfs/repository"
+	"easy-btrfs/store"
 	"easy-btrfs/utils"
 	"errors"
 	"fmt"
@@ -26,10 +25,15 @@ func main() {
 				return errors.New("mount err: " + mntErr.Error())
 			}
 
-			generalConfigRepo := repository.NewGeneralConfigRepository()
+			db, err := database.GetGormSqliteDb()
+			if err != nil {
+				return err
+			}
 
-			count, result := generalConfigRepo.Count(&models.GeneralConfig{})
-			if result.Error != nil && result.Error == gorm.ErrRecordNotFound || count == 0 {
+			generalConfigStore := store.NewGeneralConfigStore(db)
+
+			count, err := generalConfigStore.Count()
+			if err != nil && err == gorm.ErrRecordNotFound || count == 0 {
 				err := utils.Install()
 				if err != nil {
 					return errors.New(err.Error())
