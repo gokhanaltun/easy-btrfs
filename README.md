@@ -14,7 +14,7 @@ A user-friendly Btrfs CLI tool for managing snapshots.
   - [Delete Snapshots](#delete-snapshots)
   - [RollBack](#rollback)
 - [Old Backups](#old-backups)
-- Latest version: **v1.1.0** — [See what's new](#-whats-new-in-v110)
+- Latest version: **v1.1.1** — [See what's new](#-whats-new-in-v111)
 
 
 ## Important Note
@@ -183,13 +183,8 @@ For example, in the following output, the snapshot with ID 4 is an old backup, a
 ```
 
 
-## 📦 What's New in v1.1.0
-### ✨ New Features
-- 📝 **Optional snapshot descriptions:** You can now add custom descriptions when creating snapshots.
-- 🔄 **Automatic description on rollback:** When rolling back, the tool automatically creates a backup snapshot *with a meaningful description* (e.g. `"Pre-rollback snapshot taken before rollback ID X"`).
-
+## 📦 What's New in v1.1.1
 ### 🛠 Improvements
-- 🧹 Major codebase optimization and cleanup.
-- ⚙️ Improved internal structure for better performance and readability.
-
+- ✅ Added root permission check to ensure proper execution.
+- 🧹 Minor code improvements and cleanup for better stability.
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 
 	"github.com/urfave/cli/v2"
 	"gorm.io/gorm"
@@ -20,23 +21,34 @@ func main() {
 		Usage: "A user-friendly Btrfs CLI tool for managing snapshots and subvolume configurations.",
 		Before: func(ctx *cli.Context) error {
 
-			mntErr := utils.Mount()
-			if mntErr != nil {
-				return errors.New("mount err: " + mntErr.Error())
+			currentUser, err := user.Current()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Failed to get user info:", err)
+				os.Exit(1)
+			}
+
+			if currentUser.Uid != "0" {
+				fmt.Fprintln(os.Stderr, "This program must be run as root. Please use sudo.")
+				os.Exit(1)
+			}
+
+			if err := utils.Mount(); err != nil {
+				fmt.Fprintln(os.Stderr, "Mount error:", err)
+				os.Exit(1)
 			}
 
 			db, err := database.GetGormSqliteDb()
 			if err != nil {
-				return err
+				fmt.Fprintln(os.Stderr, "Failed to initialize database:", err)
+				os.Exit(1)
 			}
 
 			generalConfigStore := store.NewGeneralConfigStore(db)
-
 			count, err := generalConfigStore.Count()
-			if err != nil && err == gorm.ErrRecordNotFound || count == 0 {
-				err := utils.Install()
-				if err != nil {
-					return errors.New(err.Error())
+			if (err != nil && errors.Is(err, gorm.ErrRecordNotFound)) || count == 0 {
+				if err := utils.Install(); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
 				}
 			}
 
