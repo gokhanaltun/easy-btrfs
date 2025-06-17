@@ -43,13 +43,13 @@ func DeleteConfig() *cli.Command {
 }
 
 // Snapshot takes a snapshot of a subvolume.
-// Usage: ebtrfs snapshot [configName]
-// Example: ebtrfs snapshot root
+// Usage: ebtrfs snapshot [configName] [optionalDescription]
+// Example: ebtrfs snapshot root "before update"
 func Snapshot() *cli.Command {
 	return &cli.Command{
 		Name:    "snapshot",
 		Aliases: []string{"snap", "s"},
-		Usage:   " - takes a snapshot of a subvolume. \n - Usage: ebtrfs snapshot [configName] \n - Example: ebtrfs snapshot root \n",
+		Usage:   " - takes a snapshot of a subvolume with an optional description.\n - Usage: ebtrfs snapshot [configName] [optionalDescription]\n - Example: ebtrfs snapshot root \"before update\"\n",
 		Action:  actions.Snapshot,
 	}
 }
