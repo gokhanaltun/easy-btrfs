@@ -62,6 +62,7 @@ func RollBack(c *cli.Context) error {
 
 	preSnap := models.Snapshot{
 		Name:          config.Name,
+		Description:   fmt.Sprintf("Pre-rollback snapshot taken before rollback ID %d", snap.ID),
 		Path:          utils.OldPath + formattedTime,
 		SubvolumePath: config.SubvolumePath,
 		Pre:           true,
