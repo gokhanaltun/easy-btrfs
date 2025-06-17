@@ -14,7 +14,7 @@ A user-friendly Btrfs CLI tool for managing snapshots.
   - [Delete Snapshots](#delete-snapshots)
   - [RollBack](#rollback)
 - [Old Backups](#old-backups)
-- Latest version: **v1.1.1** — [See what's new](#-whats-new-in-v111)
+- Latest version: **v1.1.2** — [See what's new](#-whats-new-in-v112)
 
 
 ## Important Note
@@ -30,39 +30,34 @@ If the output of this command is not `ID 5 (FS_TREE)`, use the following command
 sudo btrfs subvolume set-default 5 /
 ```
 
-## Installation AMD64
-1. Clone the repository to your computer using `git clone`.
-2. Navigate to `download_location/easy-btrfs/build` and open a terminal there.
-3. First, run the following command to grant execute permission to the `install.sh` file:
-   ```bash
-   sudo chmod +x ./install.sh
-   ```
-4. To start the installation, run the following command:
-   ```bash
-   sudo ./install.sh
-   ```
+## Arch Linux (via AUR)
+```bash
+yay -S easy-btrfs
+```
 
-When the `install.sh` script is run, it will:
+## Installation via DEB Package (Debian-based systems)
 
-- Create the `@ebtrfs` directory under `/mnt`. This directory will be used to temporarily mount your disk for Btrfs operations.
-- Create the `@data`, `@old`, and `@snapshots` subvolumes:
-  - `@data` is the directory where the program will create its database.
-  - `@old` is the directory where the current system will be backed up before rolling back to a snapshot.
-  - `@snapshots` is the directory where snapshots will be stored.
-- Unmount the disk from `/mnt/@ebtrfs`.
-- Move the `ebtrfs` program file from `easy-btrfs/build` to `/usr/local/bin` and set execution permissions. This allows you to use the program from the terminal.
+You can download the latest .deb package from the [Releases](https://github.com/gokhanaltun/easy-btrfs/releases)
+ page and install it using:
+```bash
+sudo dpkg -i easy-btrfs_1.1.1_amd64.deb
+```
 
-## Manual Installation
-For manual installation, you must have <a href="https://go.dev/doc/install">Go (Golang)</a> installed on your computer. 
+## Manual Installation (For other distros or custom installs)
 
-1. Clone the repository to your computer using the `git clone` command.
-2. Navigate to `download_location/easy-btrfs` and open a terminal there.
-3. To compile the program and create an executable file, run the following command:
-   ```bash
-   go build -o ./build/ebtrfs
-   ```
-   This command will generate an executable file tailored to your computer.
-4. Now, follow steps 3 and 4 in the [Installation AMD64 (x86_64)](#installation-amd64) section to complete the setup.
+- Download the .tar.gz archive from the [Releases](https://github.com/gokhanaltun/easy-btrfs/releases) page.
+
+- Extract and install manually:
+
+```bash
+tar -xzf easy-btrfs_1.1.1_amd64.tar.gz
+cd easy-btrfs_1.1.1/
+sudo chmod +x ./install.sh
+sudo ./install.sh
+```
+
+After this, you can run ebtrfs from your terminal.
+
 
 ## Commands and Usage
 This section will explain the commands and how to use them.
@@ -183,8 +178,6 @@ For example, in the following output, the snapshot with ID 4 is an old backup, a
 ```
 
 
-## 📦 What's New in v1.1.1
+## 📦 What's New in v1.1.2
 ### 🛠 Improvements
-- ✅ Added root permission check to ensure proper execution.
-- 🧹 Minor code improvements and cleanup for better stability.
-
+* ✍️ Added missing descriptions to command help texts.
