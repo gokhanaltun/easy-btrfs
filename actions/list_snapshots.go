@@ -43,6 +43,10 @@ func ListSnapshots(c *cli.Context) error {
 		tb.Header("PreFrom").SetAlign(tabulate.BL)
 
 		for _, snap := range snaps {
+			if snap.Description == "" {
+				snap.Description = "-"
+			}
+
 			row := tb.Row()
 			row.Column(fmt.Sprint(snap.ID))
 			row.Column(snap.Name)
