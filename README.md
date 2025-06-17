@@ -40,7 +40,7 @@ yay -S easy-btrfs
 You can download the latest .deb package from the [Releases](https://github.com/gokhanaltun/easy-btrfs/releases)
  page and install it using:
 ```bash
-sudo dpkg -i easy-btrfs_1.1.1_amd64.deb
+sudo dpkg -i easy-btrfs_1.1.2_amd64.deb
 ```
 
 ## Manual Installation (For other distros or custom installs)
@@ -50,8 +50,8 @@ sudo dpkg -i easy-btrfs_1.1.1_amd64.deb
 - Extract and install manually:
 
 ```bash
-tar -xzf easy-btrfs_1.1.1_amd64.tar.gz
-cd easy-btrfs_1.1.1/
+tar -xzf easy-btrfs_1.1.2_amd64.tar.gz
+cd easy-btrfs_1.1.2/
 sudo chmod +x ./install.sh
 sudo ./install.sh
 ```
