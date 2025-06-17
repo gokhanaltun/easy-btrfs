@@ -99,14 +99,21 @@ sudo ebtrfs delete-config root
 ```
 
 ### Snapshot
-The `snapshot` command creates a read-only snapshot for a subvolume. It takes one argument:
+The `snapshot` command creates a read-only snapshot for a subvolume. It takes one required argument and one optional description argument:
 
 - **name**: The name of the config for which you want to create the snapshot.
+- **description**: (optional) A description for the snapshot, which can be multiple words without needing quotes.
 - **Aliases:** `snap`, `s`
 
 Example usage: Let's create a snapshot of root config
 ```bash
-sudo ebtrfs snapshot root
+sudo ebtrfs snapshot root This is a root snapshot
+```
+
+or with quotes
+
+```bash
+sudo ebtrfs snapshot root "This is a root snapshot"
 ```
 
 ### List Snapshots
@@ -162,11 +169,13 @@ In the list, snapshots with the `Pre` column set to `true` are old backups, and 
 
 For example, in the following output, the snapshot with ID 4 is an old backup, and the snapshot with ID 3 is a backup taken just before the rollback without any rollback.
 
+
 ```bash
-+----+------+---------------------------------------------+-------+---------+
-| ID | Name | Path                                        | Pre   | PreFrom |
-+----+------+---------------------------------------------+-------+---------+
-| 3  | root | /mnt/@ebtrfs/@snapshots/2024-08-11-19:14:25 | false | -       |
-| 4  | root | /mnt/@ebtrfs/@old/2024-08-11-19:14:45       | true  | 3       |
-+----+------+---------------------------------------------+-------+---------+
++----+------+---------------------------------------------+---------------------------+-------+---------+
+| ID | Name | Path                                        | Description               | Pre   | PreFrom |
++----+------+---------------------------------------------+---------------------------+-------+---------+
+| 3  | root | /mnt/@ebtrfs/@snapshots/2024-08-11-19:14:25 | Daily backup before update | false | -       |
+| 4  | root | /mnt/@ebtrfs/@old/2024-08-11-19:14:45       | Backup before rollback     | true  | 3       |
++----+------+---------------------------------------------+---------------------------+-------+---------+
+
 ```
