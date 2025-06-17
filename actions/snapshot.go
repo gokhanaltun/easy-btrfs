@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 )
@@ -18,6 +19,11 @@ func Snapshot(c *cli.Context) error {
 	configName := c.Args().Get(0)
 	if configName == "" {
 		return errors.New("the 'config name' argument is required and cannot be empty")
+	}
+
+	description := "-"
+	if len(c.Args().Slice()) > 1 {
+		description = strings.Join(c.Args().Slice()[1:], " ")
 	}
 
 	db, err := database.GetGormSqliteDb()
@@ -39,6 +45,7 @@ func Snapshot(c *cli.Context) error {
 
 	snapshot := models.Snapshot{
 		Name:          config.Name,
+		Description:   description,
 		Path:          utils.SnapshotsPath + formattedTime,
 		SubvolumePath: config.SubvolumePath,
 		Pre:           false,

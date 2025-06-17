@@ -37,6 +37,7 @@ func ListSnapshots(c *cli.Context) error {
 		tb := tabulate.New(tabulate.ASCII)
 		tb.Header("ID").SetAlign(tabulate.BL)
 		tb.Header("Name").SetAlign(tabulate.BL)
+		tb.Header("Description").SetAlign(tabulate.BL)
 		tb.Header("Path").SetAlign(tabulate.BL)
 		tb.Header("Pre").SetAlign(tabulate.BL)
 		tb.Header("PreFrom").SetAlign(tabulate.BL)
@@ -45,6 +46,7 @@ func ListSnapshots(c *cli.Context) error {
 			row := tb.Row()
 			row.Column(fmt.Sprint(snap.ID))
 			row.Column(snap.Name)
+			row.Column(snap.Description)
 			row.Column(snap.Path)
 
 			if snap.Pre {
@@ -81,12 +83,14 @@ func ListSnapshots(c *cli.Context) error {
 		tb := tabulate.New(tabulate.ASCII)
 		tb.Header("ID").SetAlign(tabulate.BL)
 		tb.Header("Name").SetAlign(tabulate.BL)
+		tb.Header("Description").SetAlign(tabulate.BL)
 		tb.Header("Path").SetAlign(tabulate.BL)
 
 		for _, snap := range snaps {
 			row := tb.Row()
 			row.Column(fmt.Sprint(snap.ID))
 			row.Column(snap.Name)
+			row.Column(snap.Description)
 			row.Column(snap.Path)
 		}
 
