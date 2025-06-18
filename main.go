@@ -33,20 +33,25 @@ func main() {
 			}
 
 			if err := utils.Mount(); err != nil {
-				fmt.Fprintln(os.Stderr, "Mount error:", err)
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			if err := utils.Setup(); err != nil {
+				fmt.Println(err)
 				os.Exit(1)
 			}
 
 			db, err := database.GetGormSqliteDb()
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "Failed to initialize database:", err)
+				fmt.Println(err)
 				os.Exit(1)
 			}
 
 			generalConfigStore := store.NewGeneralConfigStore(db)
 			count, err := generalConfigStore.Count()
 			if (err != nil && errors.Is(err, gorm.ErrRecordNotFound)) || count == 0 {
-				if err := utils.Install(); err != nil {
+				if err := utils.CreateDiskConfig(); err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					os.Exit(1)
 				}
@@ -57,7 +62,7 @@ func main() {
 		After: func(ctx *cli.Context) error {
 			dbInstance, err := database.GetGormSqliteDb()
 			if err != nil {
-				return fmt.Errorf("failed to initialize database: %v", err)
+				return err
 			}
 
 			db, err := dbInstance.DB()
@@ -68,7 +73,7 @@ func main() {
 
 			umntErr := utils.Umount()
 			if umntErr != nil {
-				return errors.New("umount err: " + umntErr.Error())
+				return umntErr
 			}
 
 			return nil

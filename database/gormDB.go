@@ -23,7 +23,7 @@ func GetGormSqliteDb() (*gorm.DB, error) {
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
 		if err != nil {
-			dbErr = err
+			dbErr = fmt.Errorf("failed to open database at %s: %w", dbPath, err)
 			return
 		}
 
