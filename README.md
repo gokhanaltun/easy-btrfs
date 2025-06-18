@@ -3,8 +3,8 @@ A user-friendly Btrfs CLI tool for managing snapshots.
 
 ## Table of Contents
 - [Important Note](#important-note)
-- [Installation AMD64 (x86_64)](#installation-amd64)
-- [Manual Installation](#manual-installation)
+- [Installation](#arch-linux-via-aur)
+- [Manual Installation](#manual-installation-for-other-distros-or-custom-installs)
 - [Commands and Usage](#commands-and-usage)
   - [Create Config](#create-config)
   - [List Configs](#list-configs)
@@ -14,7 +14,7 @@ A user-friendly Btrfs CLI tool for managing snapshots.
   - [Delete Snapshots](#delete-snapshots)
   - [RollBack](#rollback)
 - [Old Backups](#old-backups)
-- Latest version: **v1.1.2** — [See what's new](#-whats-new-in-v112)
+- Latest version: **v1.1.3** — [See what's new](#-whats-new-in-v113)
 
 
 ## Important Note
@@ -35,14 +35,6 @@ sudo btrfs subvolume set-default 5 /
 yay -S easy-btrfs
 ```
 
-## Installation via DEB Package (Debian-based systems)
-
-You can download the latest .deb package from the [Releases](https://github.com/gokhanaltun/easy-btrfs/releases)
- page and install it using:
-```bash
-sudo dpkg -i easy-btrfs_1.1.2_amd64.deb
-```
-
 ## Manual Installation (For other distros or custom installs)
 
 - Download the .tar.gz archive from the [Releases](https://github.com/gokhanaltun/easy-btrfs/releases) page.
@@ -50,10 +42,9 @@ sudo dpkg -i easy-btrfs_1.1.2_amd64.deb
 - Extract and install manually:
 
 ```bash
-tar -xzf easy-btrfs_1.1.2_amd64.tar.gz
-cd easy-btrfs_1.1.2/
-sudo chmod +x ./install.sh
-sudo ./install.sh
+tar -xzf easy-btrfs_1.1.3_amd64.tar.gz
+cd easy-btrfs_1.1.3/
+sudo cp ebtrfs /usr/local/bin/
 ```
 
 After this, you can run ebtrfs from your terminal.
@@ -178,6 +169,8 @@ For example, in the following output, the snapshot with ID 4 is an old backup, a
 ```
 
 
-## 📦 What's New in v1.1.2
+## 📦 What's New in v1.1.3
 ### 🛠 Improvements
-* ✍️ Added missing descriptions to command help texts.
+- 🔧 Replaced external install script with internal `Setup()` logic
+- 🧹 Optimized code structure and improved error handling
+
